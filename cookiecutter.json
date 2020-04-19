@@ -1,0 +1,11 @@
+{
+    "full_name": "Granger Doe",
+    "github_username": "fdnetworks",
+    "app_name": "mygolangproject",
+    "database": ["mysql", "postgres"],
+    "project_short_description": "A Golang project.",
+    "docker_hub_username": "lacion",
+    "docker_image": "lacion/alpine-base-image:latest",
+    "use_docker": "y",
+    "use_ci": ["gitlab", "none"]
+}

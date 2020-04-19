@@ -1,0 +1,123 @@
+stages:
+  - test
+  - build
+  - deploy-dev
+  - deploy-prod
+
+test code:
+  stage: test
+  image: golang:1.13
+  variables:
+    DOCKER_DRIVER: overlay2
+  script:
+    - go get -d -v ./...
+    - go test ./services/
+
+build-to-registry:
+  stage: build
+  image: docker:19.03.0
+  variables:
+    DOCKER_DRIVER: overlay2
+  services:
+    - docker:19.03.0-dind
+  before_script:
+    - docker info
+  script:
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
+    - docker build -t registry.gitlab.com/fdnetworks/api/{{cookiecutter.app_name}}/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA .
+    - docker push registry.gitlab.com/fdnetworks/api/{{cookiecutter.app_name}}/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA
+  when: on_success
+  only:
+    - tags
+    - master
+    - develop
+    - dev
+
+deploy_dev:
+  stage: deploy-dev
+  when: on_success
+  image: alpine:latest
+  environment:
+    name: dev
+  only:
+    - develop
+    - dev
+    - tags
+  script:
+    - install_dependencies
+    - deploy
+
+deploy_prod:
+  stage: deploy-prod
+  when: on_success
+  image: alpine:latest
+  environment:
+    name: prod
+  only:
+    - master
+  script:
+    - install_dependencies
+    - deploy
+
+.deploy_helper: &deploy_helper |
+  [[ "$TRACE" ]] && set -x
+  export kube_url=$FDN_KUBE_SERVER
+  export kube_password=$FDN_KUBE_PASSWORD
+  export kube_username=$FDN_KUBE_USER
+  export image_tag=$CI_COMMIT_SHORT_SHA
+  export chart_url=$FDN_CHART_URL
+  export repo_name=$FDN_REPO_NAME
+  export helm_version=$HELM_VERSION
+  export image_env=$CI_COMMIT_REF_NAME
+  export kube_namespace=$KUBE_NAMESPACE
+
+  function install_dependencies() {
+    echo "========================================================"
+    echo "Installing and setting up dependencies..."
+    echo "========================================================"
+    echo "========================================================"
+    echo "Installing prerequisites..."
+    echo "========================================================"
+    apk add -U openssl curl tar gzip bash ca-certificates git wget
+    curl -sSL -o /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
+    curl -sSL -O https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.28-r0/glibc-2.28-r0.apk
+    apk add --no-cache glibc-2.28-r0.apk
+    rm glibc-2.28-r0.apk
+
+    echo "========================================================"
+    echo "Setting up kubectl..."
+    echo "========================================================"
+    curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+    chmod +x ./kubectl
+    mv ./kubectl /usr/local/bin/kubectl
+    kubectl config set-cluster nosebit --server=${kube_url} --insecure-skip-tls-verify=true
+    kubectl config set-credentials admin --username=${kube_username} --password=${kube_password}
+    kubectl config set-context default --cluster=nosebit --user=${kube_username}
+    kubectl config use-context default
+    kubectl describe namespace ${kube_namespace}
+
+    echo "========================================================"
+    echo "Setting up Helm..."
+    echo "========================================================"
+    wget https://get.helm.sh/helm-${helm_version}-linux-amd64.tar.gz
+    tar -xvf helm-${helm_version}-linux-amd64.tar.gz
+    mv linux-amd64/helm /usr/local/bin
+    helm repo add ${repo_name} ${chart_url}
+    helm repo update
+  }
+
+  function deploy() {
+    echo "========================================================"
+    echo "Deploying to Dev..."
+    echo "========================================================"
+    echo "Installing new release..."
+    helm upgrade --install {{cookiecutter.app_name}} ${repo_name}/{{cookiecutter.app_name}} \
+       --set image.tags=${image_tag} \
+       --set image.env=${image_env} \
+       --namespace ${kube_namespace} \
+       --wait
+  }
+
+
+before_script:
+  - *deploy_helper
