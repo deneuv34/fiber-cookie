@@ -4,5 +4,5 @@
     "app_name": "mygolangproject",
     "database": ["mysql", "postgres"],
     "project_short_description": "A Golang project.",
-    "use_git": ["y", "n"]
+    "use_git": "y"
 }
