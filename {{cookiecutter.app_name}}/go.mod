@@ -3,7 +3,6 @@ module gitlab.com/fdnetworks/api/{{cookiecutter.app_name}}
 go 1.13
 
 require (
-	github.com/gin-gonic/gin v1.6.2
 	github.com/gofiber/compression v0.0.3 // indirect
 	github.com/gofiber/fiber v1.9.0
 	github.com/gofiber/logger v0.0.3 // indirect

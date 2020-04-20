@@ -1,6 +1,4 @@
-# cookiecutter-golang
-
-[![Build Status](https://travis-ci.org/lacion/cookiecutter-golang.svg?branch=master)](https://travis-ci.org/lacion/cookiecutter-golang)
+# Fiber Cookies
 
 Powered by [Cookiecutter](https://github.com/audreyr/cookiecutter), Cookiecutter Golang is a framework for jumpstarting production-ready go projects quickly.
 
@@ -12,12 +10,10 @@ Powered by [Cookiecutter](https://github.com/audreyr/cookiecutter), Cookiecutter
 
 ## Optional Integrations
 
-- Can use [viper](https://github.com/spf13/viper) for env var config
-- Can use [cobra](https://github.com/spf13/cobra) for cli tools
-- Can use [logrus](https://github.com/sirupsen/logrus) for logging
-- Can create dockerfile for building go binary and dockerfile for final go binary (no code in final container)
-- If docker is used adds docker management commands to makefile
-- Option of TravisCI, CircleCI or None
+- Makefile support (soon)
+- Can create dockerfile for building go binary and dockerfile for final go binary (no code in final container) (soon)
+- If docker is used adds docker management commands to makefile (soon)
+- Can use mysql or postgresql database provider
 
 ## Constraints
 
